@@ -1,4 +1,5 @@
 import requests
+import re
 import pandas as pd
 import os
 import time
@@ -7,15 +8,23 @@ from datetime import datetime, timedelta
 # Configuration - THE CORE CHANGE
 # Use the Trust CIKs we identified to ensure you only get the 'Prime' data
 TRUST_CIKS = [
-    '0002037952', # 2025-P4
-    '0001999854', # 2024-P4
-    '0001976115', # 2023-P4
-    '0001903754', # 2023-P1 (Substitute for 2022-P4)
-    '0001903753', # 2022-P2 (Crisis Peak)
-    '0001845213'  # 2021-P4 (Baseline)
+    '1841341',
+    '1843657',
+    '1843627',
+    '1845213',
+    '1903763',
+    '1903753',
+    '1903756',
+    '1999671',
+    '1999856',
+    '1999854',
+    '2037956',
+    '2037955',
+    '2037953',
+    '2037952'
 ]
 
-USER_AGENT = 'Tyler Lukasiewicz (tyler@example.com)' # SEC requires Name/Email
+USER_AGENT = 'Tyler Lukasiewicz (kablaa@abelian-labs.com)' # SEC requires Name/Email
 OUTPUT_DIR = '10-D_filings'
 LOOKBACK_YEARS = 5
 
@@ -43,6 +52,8 @@ def main():
 
         filings = data.get('filings', {}).get('recent', {})
         df = pd.DataFrame(filings)
+        print("All recent filings:")
+        print(df)
         
         # Filter for 10-D forms and date
         df_10d = df[(df['form'] == '10-D')].copy()
@@ -73,11 +84,17 @@ def download_file(url, filepath):
     """Downloads a file from a URL to the specified path."""
     headers = {'User-Agent': USER_AGENT}
     try:
-        response = requests.get(url, headers=headers, stream=True)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
+
+        content = response.content
+        # Look for uuencoded jpeg start pattern and cut it out
+        match = re.search(b'begin 644 .*?\.jpg', content, re.IGNORECASE)
+        if match:
+            content = content[:match.start()]
+
         with open(filepath, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+            f.write(content)
         print(f"Downloaded: {filepath}")
         return True
     except requests.exceptions.RequestException as e:
