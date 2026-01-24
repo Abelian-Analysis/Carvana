@@ -4,21 +4,8 @@ library(ggplot2)
 library(dplyr)
 library(forcats)
 
-# Define a dark theme
-dark_theme <- theme_minimal() +
-  theme(
-    plot.background = element_rect(fill = "#1e1e1e", color = NA),
-    panel.background = element_rect(fill = "#1e1e1e", color = NA),
-    text = element_text(color = "#e0e0e0"),
-    axis.text = element_text(color = "#e0e0e0"),
-    panel.grid.major = element_line(color = "#333333"),
-    panel.grid.minor = element_line(color = "#252525"),
-    legend.background = element_rect(fill = "#1e1e1e"),
-    legend.key = element_rect(fill = "#1e1e1e")
-  )
-
-# Apply the dark theme globally
-theme_set(dark_theme)
+# Set theme to minimal (white background)
+theme_set(theme_minimal())
 
 # Create output directory for plots
 output_dir <- "plots"
@@ -171,7 +158,7 @@ if ("vehicleValueAmount" %in% names(data) && "reportingPeriodBeginningLoanBalanc
       filter(paymentToIncomePercentage <= 0.5)
       
     p_scatter <- ggplot(scatter_data, aes(x = paymentToIncomePercentage, y = ltvRatio)) +
-      geom_point(alpha = 0.2, color = "cyan") +
+      geom_point(alpha = 0.2, color = "darkblue") +
       geom_smooth(method = "lm", color = "red", se = FALSE) +
       labs(
         title = "Correlation: LTV vs Payment-to-Income",
@@ -185,106 +172,6 @@ if ("vehicleValueAmount" %in% names(data) && "reportingPeriodBeginningLoanBalanc
     cat("Plot saved as:", file.path(output_dir, "ltv_vs_pti_scatter.png"), "\n")
   }
 }
-
-# ============================================================================
-# GEOGRAPHIC CONCENTRATION
-# ============================================================================
-
-if ("obligorGeographicLocation" %in% names(data)) {
-  cat("\n\n=== GEOGRAPHIC CONCENTRATION ===\n")
-  
-  state_counts <- data %>%
-    filter(!is.na(obligorGeographicLocation)) %>%
-    count(obligorGeographicLocation) %>%
-    arrange(desc(n)) %>%
-    head(10)
-    
-  print(state_counts)
-  
-  p_geo <- ggplot(state_counts, aes(x = reorder(obligorGeographicLocation, n), y = n)) +
-    geom_col(fill = "orange", color = "black", alpha = 0.8) +
-    coord_flip() +
-    labs(
-      title = "Top 10 States by Loan Count",
-      x = "State",
-      y = "Number of Loans"
-    ) +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-    
-  print(p_geo)
-  ggsave(file.path(output_dir, "geographic_concentration.png"), p_geo, width = 10, height = 6, dpi = 300)
-  cat("Plot saved as:", file.path(output_dir, "geographic_concentration.png"), "\n")
-}
-
-# ============================================================================
-# RISKY LOANS ANALYSIS
-# ============================================================================
-
-cat("\n\n=== RISKY LOANS ANALYSIS ===\n")
-
-# Check for required columns
-required_cols <- c("paymentToIncomePercentage", "vehicleValueAmount", "reportingPeriodBeginningLoanBalanceAmount", "vehicleManufacturerName")
-if (all(required_cols %in% names(data))) {
-  
-  # Define risky loans: paymentToIncomePercentage >= 10% AND LTV > 100% (Underwater)
-  data$is_risky <- (data$paymentToIncomePercentage >= .1 & data$ltvRatio > 100 & 
-                    !is.na(data$paymentToIncomePercentage) & !is.na(data$ltvRatio))
-  
-  # Count risky loans
-  total_risky <- sum(data$is_risky, na.rm = TRUE)
-  cat("Total risky loans (Payment/Income >= 10% AND LTV > 100%):", total_risky, "\n")
-  
-  # Filter for risky loans and count by manufacturer
-  risky_by_manufacturer <- data %>%
-    filter(is_risky == TRUE) %>%
-    group_by(vehicleManufacturerName) %>%
-    summarise(risky_count = n(), .groups = 'drop') %>%
-    arrange(desc(risky_count))
-  
-  cat("\nRisky loans by manufacturer (top 20):\n")
-  print(head(risky_by_manufacturer, 20))
-  
-  # Create bar chart of risky loans by manufacturer (top 20)
-  risky_top_20 <- head(risky_by_manufacturer, 20) %>%
-    mutate(vehicleManufacturerName = fct_reorder(vehicleManufacturerName, risky_count))
-  
-  p_risky_loans <- ggplot(risky_top_20, aes(x = vehicleManufacturerName, y = risky_count, fill = risky_count)) +
-    geom_col(color = "black", alpha = 0.8) +
-    scale_fill_gradient(low = "lightyellow", high = "darkred") +
-    labs(
-      title = "Top 20 Vehicle Manufacturers by Number of Risky Loans\n(Payment/Income >= 10% AND LTV > 100%)",
-      x = "Manufacturer",
-      y = "Number of Risky Loans",
-      fill = "Count"
-    ) +
-    theme(
-      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-      axis.title = element_text(size = 12),
-      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-      legend.position = "right"
-    )
-  
-  # Display the plot
-  print(p_risky_loans)
-  
-  # Save the plot
-  ggsave(file.path(output_dir, "risky_loans_by_manufacturer.png"), p_risky_loans, width = 12, height = 7, dpi = 300)
-  cat("\nPlot saved as:", file.path(output_dir, "risky_loans_by_manufacturer.png"), "\n")
-  
-  # Optional: Also create a version with all manufacturers
-  risky_all <- risky_by_manufacturer %>%
-    arrange(desc(risky_count)) %>%
-    mutate(vehicleManufacturerName = fct_reorder(vehicleManufacturerName, risky_count))
-  
-  cat("\nTotal manufacturers with risky loans:", nrow(risky_all), "\n")
-  
-} else {
-  cat("ERROR: Required columns not found for risky loans analysis.\n")
-  missing <- setdiff(required_cols, names(data))
-  cat("Missing columns:", paste(missing, collapse=", "), "\n")
-  cat("Available columns:", paste(names(data), collapse=", "), "\n")
-}
-
 # ============================================================================
 # SUMMARY STATISTICS
 # ============================================================================
@@ -425,9 +312,8 @@ if ("obligorCreditScore" %in% names(data)) {
   # Plot A: Credit vs PTI
   if ("paymentToIncomePercentage" %in% names(data)) {
     p_credit_pti <- ggplot(credit_data, aes(x = obligorCreditScore, y = paymentToIncomePercentage)) +
-      geom_point(alpha = 0.1, color = "cyan") +
+      geom_point(alpha = 0.1, color = "darkblue") +
       geom_smooth(method = "lm", color = "red", se = FALSE) +
-      scale_x_continuous(limits = c(400, 850)) +
       labs(
         title = "Credit Score vs. Payment-to-Income",
         x = "Obligor Credit Score",
@@ -443,9 +329,8 @@ if ("obligorCreditScore" %in% names(data)) {
   # Plot B: Credit vs LTV
   if ("ltvRatio" %in% names(data)) {
     p_credit_ltv <- ggplot(credit_data, aes(x = obligorCreditScore, y = ltvRatio)) +
-      geom_point(alpha = 0.1, color = "cyan") +
+      geom_point(alpha = 0.1, color = "darkblue") +
       geom_smooth(method = "lm", color = "red", se = FALSE) +
-      scale_x_continuous(limits = c(400, 850)) +
       scale_y_continuous(limits = c(50, 150)) +
       labs(
         title = "Credit Score vs. Mark-to-Market LTV",
@@ -549,70 +434,3 @@ if ("obligorCreditScore" %in% names(data) && "ltvRatio" %in% names(data) && "pay
 } else {
   cat("ERROR: Required columns for regression analysis not found.\n")
 }
-
-# ============================================================================
-# CONTRACTUAL VS. ECONOMIC REPORTING (SEC WHISTLEBLOWER MODULE)
-# ============================================================================
-
-cat("\n\n=== CONTRACTUAL VS. ECONOMIC REPORTING ===\n")
-
-# Ensure paymentExtendedNumber is available and numeric
-if ("paymentExtendedNumber" %in% names(data)) {
-  data$paymentExtendedNumber <- as.numeric(as.character(data$paymentExtendedNumber))
-} else {
-  cat("WARNING: 'paymentExtendedNumber' not found. Assuming 0 extensions.\n")
-  data$paymentExtendedNumber <- 0
-}
-
-# 1. Calculate Balances
-total_pool_balance <- sum(data$reportingPeriodBeginningLoanBalanceAmount, na.rm = TRUE)
-
-# Reported 60+ Delinquency
-# Logic: currentDelinquencyStatus >= 60
-delinq_60_mask <- !is.na(data$currentDelinquencyStatus) & data$currentDelinquencyStatus >= 60
-reported_delinq_balance <- sum(data$reportingPeriodBeginningLoanBalanceAmount[delinq_60_mask], na.rm = TRUE)
-reported_delinq_rate <- (reported_delinq_balance / total_pool_balance) * 100
-
-# Extension-Adjusted Delinquency
-# Logic: currentDelinquencyStatus >= 60 OR paymentExtendedNumber > 0
-extended_mask <- !is.na(data$paymentExtendedNumber) & data$paymentExtendedNumber > 0
-adjusted_mask <- delinq_60_mask | extended_mask
-
-adjusted_delinq_balance <- sum(data$reportingPeriodBeginningLoanBalanceAmount[adjusted_mask], na.rm = TRUE)
-adjusted_delinq_rate <- (adjusted_delinq_balance / total_pool_balance) * 100
-
-# Trigger
-trigger_rate <- 2.20
-
-# Table 1 Output
-cat("\nTable 1: The Contractual Mechanical Breach (SEC Yardstick)\n")
-cat(sprintf("%-45s %10s\n", "Metric", "Value"))
-cat(paste(rep("-", 57), collapse=""), "\n")
-cat(sprintf("%-45s %9.2f%%\n", "Reported 60+ Day Delinquency Rate", reported_delinq_rate))
-cat(sprintf("%-45s %9.2f%%\n", "Extension-Adjusted 60+ Day Delinquency", adjusted_delinq_rate))
-cat(sprintf("%-45s %9.2f%%\n", "Year 1 Trigger Threshold", trigger_rate))
-cat(sprintf("%-45s %10s\n", "Breach Status", ifelse(adjusted_delinq_rate > trigger_rate, "BREACHED", "SAFE")))
-
-# Table 2: Economic Reality
-cat("\nTable 2: The Economic Reality (Loss Severity)\n")
-if (exists("risk_data")) {
-  cat(sprintf("%-35s %-20s %-20s\n", "Scenario", "Estimated Loss ($)", "Impairment % of Pool"))
-  cat(paste(rep("-", 75), collapse=""), "\n")
-  for (pct in c(1, 5, 10)) {
-    cutoff_idx <- which.min(abs(risk_data$percent_borrowers - pct))
-    loss_amt <- risk_data$cumulative_loss[cutoff_idx]
-    imp_pct <- (loss_amt / total_pool_balance) * 100
-    cat(sprintf("Top %d.0%% Riskiest Borrowers Default   $%-19.2f %.2f%%\n", pct, loss_amt, imp_pct))
-  }
-} else {
-  cat("Risk data model not available (missing required columns).\n")
-}
-
-# Visualization
-plot_df <- data.frame(Category = factor(c("Reported Delinquency", "Extension-Adjusted", "Trigger Threshold"), levels = c("Reported Delinquency", "Extension-Adjusted", "Trigger Threshold")), Rate = c(reported_delinq_rate, adjusted_delinq_rate, trigger_rate), Type = c("Actual", "Adjusted", "Limit"))
-
-p_breach <- ggplot(plot_df, aes(x = Category, y = Rate, fill = Type)) + geom_col(width = 0.6, alpha = 0.9) + geom_text(aes(label = sprintf("%.2f%%", Rate)), vjust = -0.5, color = "white", fontface = "bold") + scale_fill_manual(values = c("Actual" = "steelblue", "Adjusted" = "#ef5350", "Limit" = "orange")) + labs(title = "Delinquency Trigger Analysis: Reported vs. Extension-Adjusted", subtitle = "Comparison against Year 1 2.20% Contractual Trigger", y = "Rate (%)", x = "") + theme(plot.title = element_text(hjust = 0.5, face = "bold"), legend.position = "none")
-
-print(p_breach)
-ggsave(file.path(output_dir, "delinquency_trigger_analysis.png"), p_breach, width = 10, height = 6, dpi = 300)
-cat("Plot saved as:", file.path(output_dir, "delinquency_trigger_analysis.png"), "\n")
