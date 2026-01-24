@@ -122,7 +122,8 @@ def process_trusts():
 
             int_cols = [
                 'assetNumber', 'originalLoanTerm', 'gracePeriodNumber', 'vehicleModelYear',
-                'obligorCreditScore', 'remainingTermToMaturityNumber', 'currentDelinquencyStatus'
+                'obligorCreditScore', 'remainingTermToMaturityNumber', 'currentDelinquencyStatus',
+                'obligorIncomeVerificationLevelCode', 'obligorEmploymentVerificationCode'
             ]
 
             date_cols = [

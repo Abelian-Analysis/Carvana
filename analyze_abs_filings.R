@@ -10,11 +10,13 @@ theme_set(theme_minimal())
 ltv_dir <- "plots/ltv_distros"
 pti_dir <- "plots/pti_distros"
 rate_dir <- "plots/rate_distros"
+term_dir <- "plots/term_distros"
 trend_dir <- "plots/trends"
 
 if (!dir.exists(ltv_dir)) dir.create(ltv_dir, recursive = TRUE)
 if (!dir.exists(pti_dir)) dir.create(pti_dir, recursive = TRUE)
 if (!dir.exists(rate_dir)) dir.create(rate_dir, recursive = TRUE)
+if (!dir.exists(term_dir)) dir.create(term_dir, recursive = TRUE)
 if (!dir.exists(trend_dir)) dir.create(trend_dir, recursive = TRUE)
 
 # Connect to the database
@@ -46,6 +48,7 @@ trust_stats <- data.frame(
   pct_high_pti_15 = numeric(),
   pct_high_pti_20 = numeric(),
   avg_rate = numeric(),
+  avg_term = numeric(),
   # Regression Stats: Credit vs PTI
   reg_pti_slope = numeric(),
   reg_pti_intercept = numeric(),
@@ -67,6 +70,10 @@ trust_stats <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# Initialize storage for verification distributions
+income_dist_all <- data.frame()
+employ_dist_all <- data.frame()
+
 # Process each trust
 for (trust in trusts) {
   cat(sprintf("\nProcessing Trust: %s\n", trust))
@@ -79,6 +86,7 @@ for (trust in trusts) {
   curr_high_pti_15 <- NA
   curr_high_pti_20 <- NA
   curr_rate <- NA
+  curr_term <- NA
   
   # Regression & Danger Zone placeholders
   r_pti_slope <- NA; r_pti_int <- NA; r_pti_r2 <- NA; r_pti_corr <- NA
@@ -214,6 +222,50 @@ for (trust in trusts) {
     }
   }
   
+  # --- Term Analysis ---
+  if ("originalLoanTerm" %in% names(data)) {
+    term_plot_data <- data %>%
+      filter(!is.na(originalLoanTerm) & originalLoanTerm > 0)
+      
+    if (nrow(term_plot_data) > 0) {
+      curr_term <- mean(term_plot_data$originalLoanTerm, na.rm = TRUE)
+      
+      p_term <- ggplot(term_plot_data, aes(x = originalLoanTerm)) +
+        geom_histogram(binwidth = 1, fill = "orange", color = "black", alpha = 0.7) +
+        labs(
+          title = paste("Loan Term Distribution:", trust),
+          x = "Original Loan Term (Months)",
+          y = "Frequency"
+        ) +
+        theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+        
+      filename <- file.path(term_dir, paste0(safe_name, "_term.png"))
+      ggsave(filename, p_term, width = 10, height = 6, bg = "white")
+      cat("  Saved Term plot:", filename, "\n")
+    }
+  }
+  
+  # --- Verification Analysis ---
+  if ("obligorIncomeVerificationLevelCode" %in% names(data)) {
+    inc_counts <- data %>%
+      filter(!is.na(obligorIncomeVerificationLevelCode)) %>%
+      group_by(obligorIncomeVerificationLevelCode) %>%
+      summarise(count = n(), .groups = 'drop') %>%
+      mutate(pct = count / sum(count) * 100, trust_name = trust)
+    
+    income_dist_all <- rbind(income_dist_all, inc_counts)
+  }
+
+  if ("obligorEmploymentVerificationCode" %in% names(data)) {
+    emp_counts <- data %>%
+      filter(!is.na(obligorEmploymentVerificationCode)) %>%
+      group_by(obligorEmploymentVerificationCode) %>%
+      summarise(count = n(), .groups = 'drop') %>%
+      mutate(pct = count / sum(count) * 100, trust_name = trust)
+    
+    employ_dist_all <- rbind(employ_dist_all, emp_counts)
+  }
+  
   # --- Regression & Danger Zone Analysis ---
   if ("obligorCreditScore" %in% names(data)) {
     
@@ -275,6 +327,7 @@ for (trust in trusts) {
     pct_high_pti_15 = curr_high_pti_15,
     pct_high_pti_20 = curr_high_pti_20,
     avg_rate = curr_rate,
+    avg_term = curr_term,
     reg_pti_slope = r_pti_slope, reg_pti_intercept = r_pti_int, reg_pti_r2 = r_pti_r2, reg_pti_corr = r_pti_corr,
     reg_ltv_slope = r_ltv_slope, reg_ltv_intercept = r_ltv_int, reg_ltv_r2 = r_ltv_r2, reg_ltv_corr = r_ltv_corr,
     reg_rate_slope = r_rate_slope, reg_rate_intercept = r_rate_int, reg_rate_r2 = r_rate_r2, reg_rate_corr = r_rate_corr,
@@ -419,6 +472,16 @@ if (nrow(trust_stats) > 0) {
   ggsave(file.path(trend_dir, "trend_rate.png"), p_trend_rate, width = 12, height = 6, bg = "white")
   cat("  Saved Rate trend plot.\n")
   
+  # 3b. Term Trend
+  p_trend_term <- ggplot(trust_stats, aes(x = trust_label, y = avg_term, group = 1)) +
+    geom_line(color = "orange", size = 1) +
+    geom_point(size = 3, color = "orange") +
+    geom_label(aes(label = round(avg_term, 1)), fill = "white", label.size = NA, vjust = -0.5, size = 3) +
+    labs(title = "Average Original Loan Term Trend by Trust Vintage", x = "Trust", y = "Average Loan Term (Months)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggsave(file.path(trend_dir, "trend_term.png"), p_trend_term, width = 12, height = 6, bg = "white")
+  cat("  Saved Term trend plot.\n")
+  
   # 4. Danger Zone: Prime & High PTI
   p_trend_prime_pti <- ggplot(trust_stats, aes(x = trust_label, y = pct_prime_high_pti, group = 1)) +
     geom_line(color = "orange", size = 1) +
@@ -438,6 +501,42 @@ if (nrow(trust_stats) > 0) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   ggsave(file.path(trend_dir, "trend_danger_prime_rate.png"), p_trend_prime_rate, width = 12, height = 6, bg = "white")
   cat("  Saved Prime High Rate trend plot.\n")
+  
+  # 6. Verification Trends
+  # Create mapping for trust labels
+  trust_label_map <- trust_stats %>% select(trust_name, trust_label)
+  
+  if (nrow(income_dist_all) > 0) {
+    income_plot_data <- income_dist_all %>%
+      inner_join(trust_label_map, by = "trust_name")
+    
+    # Ensure factor order matches trust_stats
+    income_plot_data$trust_label <- factor(income_plot_data$trust_label, levels = levels(trust_stats$trust_label))
+    
+    p_inc <- ggplot(income_plot_data, aes(x = trust_label, y = pct, fill = as.factor(obligorIncomeVerificationLevelCode))) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label = ifelse(pct > 5, paste0(round(pct, 0), "%"), "")), position = position_stack(vjust = 0.5), size = 3, color = "white") +
+      labs(title = "Trend: Income Verification Level Distribution", x = "Trust", y = "Percentage of Pool (%)", fill = "Code") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggsave(file.path(trend_dir, "trend_income_verification.png"), p_inc, width = 12, height = 6, bg = "white")
+    cat("  Saved Income Verification trend plot.\n")
+  }
+
+  if (nrow(employ_dist_all) > 0) {
+    employ_plot_data <- employ_dist_all %>%
+      inner_join(trust_label_map, by = "trust_name")
+    
+    # Ensure factor order matches trust_stats
+    employ_plot_data$trust_label <- factor(employ_plot_data$trust_label, levels = levels(trust_stats$trust_label))
+    
+    p_emp <- ggplot(employ_plot_data, aes(x = trust_label, y = pct, fill = as.factor(obligorEmploymentVerificationCode))) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label = ifelse(pct > 5, paste0(round(pct, 0), "%"), "")), position = position_stack(vjust = 0.5), size = 3, color = "white") +
+      labs(title = "Trend: Employment Verification Level Distribution", x = "Trust", y = "Percentage of Pool (%)", fill = "Code") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggsave(file.path(trend_dir, "trend_employment_verification.png"), p_emp, width = 12, height = 6, bg = "white")
+    cat("  Saved Employment Verification trend plot.\n")
+  }
 }
 
 dbDisconnect(conn)
