@@ -173,6 +173,13 @@ during the high-rate environment. Rather than relying primarily on credit scores
 to determine risk-based pricing, the issuer increasingly assigned high APRs
 (>12\%) to borrowers with prime FICO scores (>740). 
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{plots/trends/trend_danger_prime_rate.png}
+\caption{Prime Borrowers with Subprime-Level APRs}
+\end{figure}
+
+
 Charging a subprime-level interest rate to a high-FICO borrower is effectively
 an admission that the credit score is no longer a reliable predictor of
 Probability of Default (PD) in these pools. By continuing to label these loans
@@ -195,12 +202,6 @@ changes reduced the need—and feasibility—of routinely assigning >12\% APRs t
 prime-score borrowers, leading to a partial normalization of the FICO-APR
 relationship in the 2025 vintages .
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=1.0\textwidth]{plots/trends/trend_r2_vs_underwater.png}
-\caption{Trend: Pricing Correlation vs.  Negative Equity}
-\end{figure}
-
 
 To sustain borrower affordability and issuer cash flow without reverting to the
 earlier pricing mismatches, Carvana adapted by leaning more heavily on a
@@ -209,16 +210,7 @@ how this strategic pivot—while superficially improving pricing integrity—has
 come at the direct expense of collateral quality, structurally increasing Loss
 Given Default (LGD) through widespread negative equity.
 
-\section{Impact on Investors}
-The ``Super-Prime'' branding of the P-Series presents material challenges for
-investors seeking accurate assessments of Probability of Default (PD) and Loss
-Given Default (LGD). While the issuer appears to have captured subprime-like
-yields through high LTV/PTI structures and pricing flexibility, it has provided
-investors with the transparency and risk profile traditionally associated with
-prime ABS. This constitutes \textbf{risk arbitrage through disclosure
-asymmetry}.
-
-\subsection{The "Underwater" Collateral Crisis}
+\section{The "Underwater" Collateral Crisis}
 The issuer has utilized extended loan terms as a mathematical lever to manage
 monthly affordability at the direct expense of the underlying collateral
 security. By slowing the rate of principal amortization while vehicle
@@ -235,6 +227,7 @@ systemic shift to manage borrower cash-flow constraints at the direct expense
 of collateral amortization. The extension of loan duration
 serves as the primary mechanism for preventing immediate liquidity-driven
 defaults in a high-inflation environment.
+
 \textbf{Structural Risk Factor:} With an average term of \textbf{73
 months}, the principal pay-down is too slow to outpace vehicle depreciation.
 This shift results in a collateral deficiency where the outstanding loan
@@ -262,7 +255,7 @@ late 2025.
 receivables, a 2-month average term increase represents a systemic deferral
 of principal repayment, pushing the "equity inflection point" dangerously
 far into the loan lifecycle.
-\item \textbf{Heightened Loss Given Default (LGD):} For the 36.1% of loans
+\item \textbf{Heightened Loss Given Default (LGD):} For the 36.1\% of loans
 currently underwater, any default event carries a significantly higher loss
 severity than historical Prime benchmarks.
 \item \textbf{Adverse Incentive:} High LTV ratios incentivize "strategic
@@ -319,7 +312,7 @@ loss severity, the issuer is delaying the mandatory "protective diversions"
 of cash flow required by the Trust Indenture, thereby prioritizing short-term 
 performance metrics.
 The behaviors documented in the 2021-P2 trust are not isolated anomalies.
-Cross-trust analysis of the P-Series\footnote{Additional graphs are amended to the filed complaint} reveals a consistent operational strategy:
+Cross-trust analysis of the P-Series\footnote{Additional graphs included in the Appendix} reveals a consistent operational strategy:
 when organic delinquency levels approach contractual triggers, extension volume
 increases proportionately to maintain technical compliance while managing
 economic performance.
@@ -347,7 +340,9 @@ submitted by Carvana to the SEC.
 \item An LLM was used to parse delinquency and extension data from over 400 10-D
 filings. The raw data created by the LLM was manually audited for accuracy and 
 modified in a few places where the LLM misread the tables in the filings. Both 
-the raw data and modified data files are included with this submission.
+the raw data and modified data files are included with this submission. Additionally, 
+all of the code and scripts used to generate this report can be found on GitHub at:
+\url{https://github.com/Abelian-Analysis/Carvana}.
 
 \item All scripts used to pull data from EDGAR, to process the data, and to generate
 the figures and tables in this report are included in the submission.
@@ -373,5 +368,55 @@ the following data hygiene protocol was implemented in R:
     \textbf{live economic reality} of the portfolio's current interest-bearing
     assets.
 \end{itemize}
+
+\subsection{A Pattern Of Trigger Management Across Vintages}
+
+The strategic clustering of loan extensions immediately prior to delinquency
+trigger breaches, as documented in the 2021-P2 trust analysis, is not an
+isolated incident. Rather, it represents a systematic operational pattern that
+repeats consistently across the entire P-Series portfolio spanning multiple
+vintage years. The following graphs illustrate how this trigger management
+mechanism—where extension volume increases proportionately as delinquency rates
+approach the 4.5\% contractual threshold—appears across 2021, 2022, and
+subsequent vintages. This cross-vintage consistency suggests an
+institutionalized approach to managing contractual triggers, where the issuer
+deploys deferrals as a tactical tool to maintain technical compliance while
+masking the underlying economic deterioration of the portfolio. By
+systematically preventing reported delinquency from exceeding contractual
+thresholds, the issuer effectively circumvents the mandatory investor
+protections encoded in the Trust Indentures, perpetuating the misalignment
+between disclosed risk and economic reality discussed in the Strategic
+Management section.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2021_P1_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2021_P2_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2021_P3_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2021_P4_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2022_P1_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2022_P2_delinquency.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{plots/Carvana_Auto_Receivables_Trust_2022_P3_delinquency.png}
+\end{figure}
+
+
 
 \end{document}
