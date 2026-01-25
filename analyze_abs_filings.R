@@ -537,6 +537,35 @@ if (nrow(trust_stats) > 0) {
     ggsave(file.path(trend_dir, "trend_employment_verification.png"), p_emp, width = 12, height = 6, bg = "white")
     cat("  Saved Employment Verification trend plot.\n")
   }
+
+  # 7. Dual Axis: R^2 (FICO vs Rate) vs % Underwater
+  # Scale factor for secondary axis: R2 is 0-1, Underwater is 0-100.
+  scale_factor <- 100
+  p_dual <- ggplot(trust_stats, aes(x = trust_label, group = 1)) +
+    # Primary Axis: R^2 (Blue)
+    geom_line(aes(y = reg_rate_r2, color = "R^2 (FICO vs Rate)"), size = 1) +
+    geom_point(aes(y = reg_rate_r2, color = "R^2 (FICO vs Rate)"), size = 3) +
+    
+    # Secondary Axis: % Underwater (Red) - Scaled down
+    geom_line(aes(y = pct_underwater / scale_factor, color = "% Underwater"), size = 1) +
+    geom_point(aes(y = pct_underwater / scale_factor, color = "% Underwater"), size = 3) +
+    
+    scale_y_continuous(
+      name = "Correlation (R^2)",
+      limits = c(0, 1),
+      sec.axis = sec_axis(~ . * scale_factor, name = "% Underwater (LTV > 100)")
+    ) +
+    scale_color_manual(name = "Metric", values = c("R^2 (FICO vs Rate)" = "blue", "% Underwater" = "red")) +
+    labs(
+      title = "Trend: Pricing Correlation vs. Negative Equity",
+      x = "Trust"
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom"
+    )
+  ggsave(file.path(trend_dir, "trend_r2_vs_underwater.png"), p_dual, width = 12, height = 6, bg = "white")
+  cat("  Saved R^2 vs Underwater dual-axis trend plot.\n")
 }
 
 dbDisconnect(conn)

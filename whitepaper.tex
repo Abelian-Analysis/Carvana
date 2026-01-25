@@ -38,8 +38,8 @@
 \pagestyle{fancy}
 \fancyhf{}
 \setlength{\headheight}{14pt}
-\lhead{\textcolor{darkgray}{\small \textit{SEC Whistleblower Submission: 
-Carvana P-Series Structural Analysis}}}
+\lhead{\textcolor{darkgray}{\small \textit{SEC TCR Submission: 
+Carvana P-Series}}}
 \rhead{\textcolor{darkgray}{\small \today}}
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.5pt}
@@ -51,11 +51,10 @@ Carvana P-Series Structural Analysis}}}
 % Title Page
 \title{
     \vspace{1in}
-    \Huge \textbf{\textcolor{navyblue}{The Divergence of Prime Metrics:}} \\
-    \Large \textbf{\textcolor{navyblue}{Systemic Data Patterns and Structural 
-    Risk in Carvana P-Series Auto ABS}} \\
+    \Huge \textbf{\textcolor{navyblue}{Subprime-Like Risk Characteristics in a Prime-Designated Auto Loan Securitization:}} \\
+    \Large \textbf{\textcolor{navyblue}{Carvana P-Series}} \\
     \vspace{0.2in}
-    \Large \textit{\textcolor{darkgray}{Formal Analysis regarding Carvana Auto 
+    \Large \textit{\textcolor{darkgray}{Formal Complaint regarding Carvana Auto 
     Receivables Trust (CVNA) Regulatory Compliance and Risk Disclosure}}
     \vspace{1in}
 }
@@ -121,7 +120,6 @@ independently verified by the lender. This total reliance on unverified data
 points transforms the PTI ratio from an objective risk metric into a subjective,
 and potentially unreliable, assertion.
 
-
 \section{The Decomposition of Risk-Based Pricing}
 A fundamental tenet of Prime ABS is the predictive power of a borrower’s credit
 score (FICO) in determining the interest rate (APR). In a stable prime
@@ -129,80 +127,107 @@ environment, FICO and APR should exhibit a strong inverse correlation. However,
 linear regression analysis of the P-Series data demonstrates that this
 relationship has significantly weakened, signaling that the ``Prime'' label is
 being used to obscure a non-traditional, high-risk pricing model.
-
 \subsection{Predictive Divergence and Credit Score Efficacy}
-The $R^2$ coefficient, which measures the proportion of variance in interest
+The $  R^2  $ coefficient, which measures the proportion of variance in interest
 rates explained by FICO scores, has undergone a significant decline. This
 suggests the emergence of credit-divergent borrowers—individuals who
 maintain high FICO scores due to credit lag but lack the underlying cash flow or
 collateral equity to support prime-level pricing.
-
 \begin{itemize}
-    \item \textbf{Model Decoupling:} In 2022-P1, FICO scores explained
-    approximately 61\% of the pricing variance ($R^2 = 0.6073$). By the 2024-P4
-    vintage, this decreased to \textbf{24.8\%}.
-    \item \textbf{Latent Risk Variables:} This decoupling indicates that the
-    issuer's internal pricing engine has moved away from FICO as a primary risk
-    determinant, instead relying on undisclosed "latent variables" that more
-    closely resemble subprime underwriting.
+\item \textbf{Model Decoupling:} In 2022-P1, FICO scores explained
+approximately 61\% of the pricing variance ($  R^2 = 0.6073  $). By the 2024-P4
+vintage, this decreased to \textbf{24.8\%}.
+\item \textbf{Latent Risk Variables:} This decoupling indicates that the
+issuer's internal pricing engine has moved away from FICO as a primary risk
+determinant, instead relying on undisclosed "latent variables" that more
+closely resemble subprime underwriting.
 \end{itemize}
 
-% TABLE: Regression Analysis
+% Table 3: Credit Score vs Interest Rate
 \begin{table}[ht]
 \centering
-\caption{Regression Analysis: FICO Score vs. Interest Rate Decoupling}
+\caption{Regression Analysis: Credit Score vs. Interest Rate}
 \begin{tabular}{lcccc}
 \hline
-\textbf{Trust} & \textbf{Slope} & \textbf{Intercept} & \textbf{$R^2$} & \textbf{Correlation} \\
+Trust & Slope & Intercept & $R^2$ & Correlation \\
 \hline
-2021-P1 & -0.000363 & 0.3391 & 0.5387 & -0.7339 \\
 2022-P1 & -0.000361 & 0.3309 & 0.6073 & -0.7793 \\
-\rowcolor{red!15} 2024-P2 & -0.000309 & 0.3571 & 0.3302 & -0.5746 \\
-\rowcolor{red!25} 2024-P4 & -0.000275 & 0.3272 & \textbf{0.2480} & -0.4980 \\
+2022-P2 & -0.000343 & 0.3331 & 0.5324 & -0.7296 \\
+\rowcolor{red!7} 2022-P3 & -0.000315 & 0.3257 & 0.4801 & -0.6929 \\
+\rowcolor{red!14} 2024-P2 & -0.000309 & 0.3571 & 0.3302 & -0.5746 \\
+\rowcolor{red!21} 2024-P3 & -0.000309 & 0.3571 & 0.3346 & -0.5784 \\
+\rowcolor{red!30} 2024-P4 & -0.000275 & 0.3272 & \textbf{0.2480} & -0.4980 \\
+2025-P1 & -0.000377 & 0.4057 & 0.4800 & -0.6928 \\
+2025-P2 & -0.000355 & 0.3791 & 0.4090 & -0.6396 \\
+2025-P3 & -0.000333 & 0.3566 & 0.4114 & -0.6414 \\
+2025-P4 & -0.000363 & 0.3706 & 0.4640 & -0.6812 \\
 \hline
 \end{tabular}
 \end{table}
 
+
 \subsection{Adverse Selection and Borrower Liquidity Profiles}
+The sharp decline in the $R^2$ between FICO scores and APR from 2022-P1 (0.6073)
+to 2024-P4 (0.2480) reflects a fundamental shift in Carvana's pricing engine
+during the high-rate environment. Rather than relying primarily on credit scores
+to determine risk-based pricing, the issuer increasingly assigned high APRs
+(>12\%) to borrowers with prime FICO scores (>740). 
+
+Charging a subprime-level interest rate to a high-FICO borrower is effectively
+an admission that the credit score is no longer a reliable predictor of
+Probability of Default (PD) in these pools. By continuing to label these loans
+as ``Prime,'' Carvana captured subprime-like yields while benefiting from the
+lower capital requirements, higher ratings, and greater investor confidence
+associated with prime ABS tranches.
+
+This creates a clear potential for mispricing of risk: the ``Prime'' designation
+masks the fragility of borrowers who maintain high credit scores (often due to
+credit lag) but exhibit low liquidity, high debt-service burdens, or
+insufficient collateral equity in a high-inflation, elevated-vehicle-price
+environment.
+
+From 2022 through much of 2024, this decoupling represented the primary
+mechanism for maintaining attractive yields in a stressed macro backdrop.
+However, by late 2024 and into 2025, market conditions began to shift: benchmark
+interest rates stabilized and then declined, new- and used-vehicle inventory
+normalized, and competitive pressure from traditional lenders intensified. These
+changes reduced the need—and feasibility—of routinely assigning >12\% APRs to
+prime-score borrowers, leading to a partial normalization of the FICO-APR
+relationship in the 2025 vintages .
+
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth]{plots/trends/trend_danger_prime_rate.png}
-    \caption{Trend: Percentage of Underwater Loans (LTV > 100\%)}
+\centering
+\includegraphics[width=1.0\textwidth]{plots/trends/trend_r2_vs_underwater.png}
+\caption{Trend: Pricing Correlation vs.  Negative Equity}
 \end{figure}
-The breakdown in $R^2$ correlates precisely with a marked increase in high-APR
-loans assigned to "Prime" borrowers. Charging a 12\%+ interest rate to a
-borrower with a 740+ FICO score is an implicit admission by the lender that the
-FICO score is no longer a reliable indicator of the Probability of Default (PD).
 
 
-
-\textbf{Risk Profile Analysis:}
-By labeling these as "Prime" assets, the issuer captures the yield of a subprime
-loan (12\%+) while benefiting from the lower capital requirements and higher
-investor confidence associated with Prime ABS. This creates a \textbf{potential
-mispricing of risk}, as the "Prime" designation fails to capture the true
-fragility of borrowers who are high-score but low-liquidity in a high-inflation,
-negative-equity environment.
+To sustain borrower affordability and issuer cash flow without reverting to the
+earlier pricing mismatches, Carvana adapted by leaning more heavily on a
+different lever: extending original loan terms. The following section examines
+how this strategic pivot—while superficially improving pricing integrity—has
+come at the direct expense of collateral quality, structurally increasing Loss
+Given Default (LGD) through widespread negative equity.
 
 \section{Impact on Investors}
-The "Super-Prime" branding presents challenges for investors regarding the "Probability of 
-Default" (PD) and "Loss Given Default" (LGD). The issuer is capturing 
-"Subprime Yield" (high interest/fees from high LTV/PTI) while providing "Prime 
-Transparency" to investors. This is known as \textbf{"Risk Arbitrage through 
-Disclosure Asymmetry."}
+The ``Super-Prime'' branding of the P-Series presents material challenges for
+investors seeking accurate assessments of Probability of Default (PD) and Loss
+Given Default (LGD). While the issuer appears to have captured subprime-like
+yields through high LTV/PTI structures and pricing flexibility, it has provided
+investors with the transparency and risk profile traditionally associated with
+prime ABS. This constitutes \textbf{risk arbitrage through disclosure
+asymmetry}.
 
 \subsection{The "Underwater" Collateral Crisis}
-The issuer has utilized extended loan terms as a mathematical lever to manage 
-monthly affordability at the direct expense of the underlying collateral 
-security. By slowing the rate of principal amortization while vehicle 
-depreciation remains constant, the issuer has structurally created a 
+The issuer has utilized extended loan terms as a mathematical lever to manage
+monthly affordability at the direct expense of the underlying collateral
+security. By slowing the rate of principal amortization while vehicle
+depreciation remains constant, the issuer has structurally created a
 portfolio with high loss severity.
-
-\subsubsection{The Mechanism: Amortization vs. Depreciation}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth]{plots/trends/trend_term.png}
-    \caption{Trend: Average Original Loan Term (Months)}
+\centering
+\includegraphics[width=1.0\textwidth]{plots/trends/trend_term.png}
+\caption{Trend: Average Original Loan Term (Months)}
 \end{figure}
 Since the beginning of 2025, the average loan term has increased from 71 to 73
 months. This sharp increase in weighted average loan terms represents a
@@ -210,85 +235,59 @@ systemic shift to manage borrower cash-flow constraints at the direct expense
 of collateral amortization. The extension of loan duration
 serves as the primary mechanism for preventing immediate liquidity-driven
 defaults in a high-inflation environment.
-
-
-
-\textbf{Structural Risk Factor:} With an average term of \textbf{73 
-months}, the principal pay-down is too slow to outpace vehicle depreciation. 
-This shift results in a collateral deficiency where the outstanding loan 
-balance exceeds the asset value, significantly increasing the Loss Given 
+\textbf{Structural Risk Factor:} With an average term of \textbf{73
+months}, the principal pay-down is too slow to outpace vehicle depreciation.
+This shift results in a collateral deficiency where the outstanding loan
+balance exceeds the asset value, significantly increasing the Loss Given
 Default (LGD).
-
-The monthly payment ($PMT$) is governed by the standard annuity formula:
-\[ PMT = P \cdot \frac{r(1+r)^n}{(1+r)^n - 1} \]
-
-Where:
-\begin{itemize}
-    \item $P$ = Principal (Original Loan Amount)
-    \item $r$ = Monthly Interest Rate
-    \item $n$ = Loan Term in Months
-\end{itemize}
-
-By increasing $n$ from 71 to 73, the issuer successfully reduced the $PMT$
-required for a given principal, thereby maintaining the "Prime" appearance of
-affordability.
-
-\subsubsection{The Resultant Equity Gap}
-The risk to the Trust is defined by the Loan-to-Value ($LTV$) ratio at any time $t$:
-\[ LTV_t = \frac{Balance_t}{Value_t} \]
-
-While $Balance_t$ is reduced more slowly due to the 73-month term extension, the
-vehicle value ($Value_t$) continues to follow a standard exponential
+The risk to the Trust is defined by the Loan-to-Value ($  LTV  $) ratio at any time $  t  $:
+$   LTV_t = \frac{Balance_t}{Value_t}   $
+While $  Balance_t  $ is reduced more slowly due to the 73-month term extension, the
+vehicle value ($  Value_t  $) continues to follow a standard exponential
 depreciation curve:
-\[ Value_t = Value_0 \cdot e^{-kt} \]
-
-Where $k$ represents the depreciation constant. Because the amortization curve
-has been flattened by the term extension, $Balance_t$ remains higher than
-$Value_t$ for a significantly longer duration. This mathematical "crossover" has
+$   Value_t = Value_0 \cdot e^{-kt}   $
+Where $  k  $ represents the depreciation constant. Because the amortization curve
+has been flattened by the term extension, $  Balance_t  $ remains higher than
+$  Value_t  $ for a significantly longer duration. This mathematical "crossover" has
 resulted in \textbf{36.1\% of the pool becoming underwater (LTV > 100\%)} as of
 late 2025.
-
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth]{plots/trends/trend_ltv_underwater.png}
-    \caption{Trend: Percentage of Underwater Loans (LTV > 100\%)}
+\centering
+\includegraphics[width=1.0\textwidth]{plots/trends/trend_ltv_underwater.png}
+\caption{Trend: Percentage of Underwater Loans (LTV > 100\%)}
 \end{figure}
-
 \textbf{The Duration-Severity Paradox:}
 \begin{itemize}
-    \item \textbf{Delayed Equity Recovery:} In a pool of over 35,000
-    receivables, a 2-month average term increase represents a systemic deferral
-    of principal repayment, pushing the "equity inflection point" dangerously
-    far into the loan lifecycle.
-    \item \textbf{Heightened Loss Given Default (LGD):} For the 36.1\% of loans
-    currently underwater, any default event carries a significantly higher loss
-    severity than historical Prime benchmarks.
-    \item \textbf{Adverse Incentive:} High LTV ratios incentivize "strategic
-    defaults," where borrowers with negative equity choose to abandon the asset
-    during periods of economic stress or required maintenance.
+\item \textbf{Delayed Equity Recovery:} In a pool of over 35,000
+receivables, a 2-month average term increase represents a systemic deferral
+of principal repayment, pushing the "equity inflection point" dangerously
+far into the loan lifecycle.
+\item \textbf{Heightened Loss Given Default (LGD):} For the 36.1% of loans
+currently underwater, any default event carries a significantly higher loss
+severity than historical Prime benchmarks.
+\item \textbf{Adverse Incentive:} High LTV ratios incentivize "strategic
+defaults," where borrowers with negative equity choose to abandon the asset
+during periods of economic stress or required maintenance.
 \end{itemize}
-
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\textwidth]{plots/ltv_distros/Carvana_Auto_Receivables_Trust_2025_P4_ltv.png}
-    \caption{LTV Distribution for 2025-P4: Structural Negative Equity}
+\centering
+\includegraphics[width=1.0\textwidth]{plots/ltv_distros/Carvana_Auto_Receivables_Trust_2025_P4_ltv.png}
+\caption{LTV Distribution for 2025-P4: Structural Negative Equity}
 \end{figure}
-
-\textbf{Current Stricture Analysis (2025-P4):}
-The distribution of Loan-to-Value (LTV) ratios for the most recent vintage, 
-2025-P4, illustrates a structural shift towards negative equity at origination. 
-A significant portion of the pool is "underwater" (LTV > 100\%) from day one, 
-indicating that the loan amounts exceed the value of the collateral. This 
-structure relies heavily on borrower repayment continuity rather than asset 
+The distribution of Loan-to-Value (LTV) ratios for the most recent vintage,
+2025-P4, illustrates a structural shift towards negative equity at origination.
+A significant portion of the pool is "underwater" (LTV > 100\%) from day one,
+indicating that the loan amounts exceed the value of the collateral. This
+structure relies heavily on borrower repayment continuity rather than asset
 recovery value.
-
-\textbf{Conclusion:} The issuer has effectively traded \textbf{Collateral
+In summary, the issuer has effectively traded \textbf{Collateral
 Amortization Speed} for \textbf{Payment Affordability}. This structural choice has replaced
 borrower-based risk with asset-based risk, a shift that is not reflected in the
 "P-Series" Prime designation.
-With the collateral effectively diluted, the portfolio faces inevitable 
-performance pressure. The following section demonstrates how the issuer actively 
+With the collateral effectively diluted, the portfolio faces inevitable
+performance pressure. The following section demonstrates how the issuer actively
 mitigates this deterioration to avoid contractual consequences.
+
 
 \subsection{Strategic Management of Contractual Triggers}
 
