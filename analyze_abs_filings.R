@@ -12,12 +12,25 @@ pti_dir <- "plots/pti_distros"
 rate_dir <- "plots/rate_distros"
 term_dir <- "plots/term_distros"
 trend_dir <- "plots/trends"
+spread_dir <- "plots/spread_distros"
 
 if (!dir.exists(ltv_dir)) dir.create(ltv_dir, recursive = TRUE)
 if (!dir.exists(pti_dir)) dir.create(pti_dir, recursive = TRUE)
 if (!dir.exists(rate_dir)) dir.create(rate_dir, recursive = TRUE)
 if (!dir.exists(term_dir)) dir.create(term_dir, recursive = TRUE)
 if (!dir.exists(trend_dir)) dir.create(trend_dir, recursive = TRUE)
+if (!dir.exists(spread_dir)) dir.create(spread_dir, recursive = TRUE)
+
+# Load federal funds rate data
+ffr_file <- "fed_funds_rate.csv"
+if (!file.exists(ffr_file)) {
+  stop(paste("Federal funds rate file not found:", ffr_file,
+             "\nRun fetch_fed_funds_rate.py first to generate this file."))
+}
+ffr_data <- read.csv(ffr_file)
+ffr_data$date <- as.Date(ffr_data$date)
+ffr_data$year_month <- format(ffr_data$date, "%Y-%m")
+cat(sprintf("Loaded federal funds rate data: %d observations\n", nrow(ffr_data)))
 
 # Connect to the database
 db_path <- "cvna_loan_tape.db"
@@ -48,6 +61,7 @@ trust_stats <- data.frame(
   pct_high_pti_15 = numeric(),
   pct_high_pti_20 = numeric(),
   avg_rate = numeric(),
+  avg_spread = numeric(),
   avg_term = numeric(),
   # Regression Stats: Credit vs PTI
   reg_pti_slope = numeric(),
@@ -74,6 +88,9 @@ trust_stats <- data.frame(
 income_dist_all <- data.frame()
 employ_dist_all <- data.frame()
 
+# Initialize storage for spread data (for combined plot)
+spread_all <- data.frame()
+
 # Process each trust
 for (trust in trusts) {
   cat(sprintf("\nProcessing Trust: %s\n", trust))
@@ -86,6 +103,7 @@ for (trust in trusts) {
   curr_high_pti_15 <- NA
   curr_high_pti_20 <- NA
   curr_rate <- NA
+  curr_spread <- NA
   curr_term <- NA
   
   # Regression & Danger Zone placeholders
@@ -221,7 +239,101 @@ for (trust in trusts) {
       cat("  Saved Rate plot:", filename, "\n")
     }
   }
-  
+
+  # --- Spread Analysis ---
+  if ("reportingPeriodInterestRatePercentage" %in% names(data) &&
+      "reportingPeriodBeginningDate" %in% names(data)) {
+
+    # Create year-month key for joining with FFR data
+    spread_data <- data %>%
+      filter(!is.na(reportingPeriodInterestRatePercentage) &
+             reportingPeriodInterestRatePercentage > 0 &
+             !is.na(reportingPeriodBeginningDate)) %>%
+      mutate(year_month = format(reportingPeriodBeginningDate, "%Y-%m"))
+
+    # Join with federal funds rate
+    spread_data <- spread_data %>%
+      left_join(ffr_data %>% select(year_month, fed_funds_rate), by = "year_month")
+
+    # Calculate spread (APR - Federal Funds Rate)
+    # Note: Loan rates are stored as decimals (0.08 = 8%), FFR is in percentage (4.33 = 4.33%)
+    # Convert loan rate to percentage for consistent comparison
+    spread_data <- spread_data %>%
+      filter(!is.na(fed_funds_rate)) %>%
+      mutate(
+        apr_pct = reportingPeriodInterestRatePercentage * 100,
+        spread = apr_pct - fed_funds_rate
+      )
+
+    if (nrow(spread_data) > 0) {
+      curr_spread <- mean(spread_data$spread, na.rm = TRUE)
+
+      # Create scatter plot of spread vs FICO score
+      if ("obligorCreditScore" %in% names(spread_data)) {
+        spread_fico_data <- spread_data %>%
+          filter(!is.na(obligorCreditScore) & obligorCreditScore > 300)
+
+        if (nrow(spread_fico_data) > 0) {
+          # Calculate correlation
+          fico_spread_corr <- cor(spread_fico_data$obligorCreditScore,
+                                   spread_fico_data$spread,
+                                   use = "complete.obs")
+
+          p_spread_fico <- ggplot(spread_fico_data, aes(x = obligorCreditScore, y = spread)) +
+            geom_point(alpha = 0.15, color = "steelblue", size = 1) +
+            geom_smooth(method = "lm", color = "red", se = TRUE, linewidth = 1) +
+            labs(
+              title = paste("Spread vs FICO Score:", trust),
+              subtitle = paste0("Correlation: ", round(fico_spread_corr, 3),
+                               " | Mean spread: ", round(curr_spread, 2), "%",
+                               " | n=", nrow(spread_fico_data)),
+              x = "FICO Score",
+              y = "Spread (APR - Fed Funds Rate, %)"
+            ) +
+            theme(
+              plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+              axis.title = element_text(size = 12)
+            )
+
+          filename <- file.path(spread_dir, paste0(safe_name, "_spread_fico.png"))
+          ggsave(filename, p_spread_fico, width = 10, height = 6, bg = "white")
+          cat("  Saved Spread vs FICO plot:", filename, "\n")
+        }
+      }
+
+      # Also create a histogram of spreads
+      p_spread_hist <- ggplot(spread_data, aes(x = spread)) +
+        geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
+        geom_vline(xintercept = mean(spread_data$spread, na.rm = TRUE),
+                   color = "red", linetype = "dashed", linewidth = 1) +
+        labs(
+          title = paste("Spread Distribution:", trust),
+          subtitle = paste0("Mean spread: ", round(curr_spread, 2),
+                           "% over Fed Funds Rate"),
+          x = "Spread (APR - Fed Funds Rate, %)",
+          y = "Frequency"
+        ) +
+        theme(
+          plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+          axis.title = element_text(size = 12)
+        )
+
+      filename <- file.path(spread_dir, paste0(safe_name, "_spread_hist.png"))
+      ggsave(filename, p_spread_hist, width = 10, height = 6, bg = "white")
+      cat("  Saved Spread histogram:", filename, "\n")
+
+      # Accumulate spread data for combined plot (include FICO if available)
+      if ("obligorCreditScore" %in% names(spread_data)) {
+        spread_all <- rbind(spread_all, spread_data %>%
+          select(trust_name, spread, apr_pct, fed_funds_rate, obligorCreditScore))
+      } else {
+        spread_all <- rbind(spread_all, spread_data %>%
+          mutate(obligorCreditScore = NA) %>%
+          select(trust_name, spread, apr_pct, fed_funds_rate, obligorCreditScore))
+      }
+    }
+  }
+
   # --- Term Analysis ---
   if ("originalLoanTerm" %in% names(data)) {
     term_plot_data <- data %>%
@@ -327,6 +439,7 @@ for (trust in trusts) {
     pct_high_pti_15 = curr_high_pti_15,
     pct_high_pti_20 = curr_high_pti_20,
     avg_rate = curr_rate,
+    avg_spread = curr_spread,
     avg_term = curr_term,
     reg_pti_slope = r_pti_slope, reg_pti_intercept = r_pti_int, reg_pti_r2 = r_pti_r2, reg_pti_corr = r_pti_corr,
     reg_ltv_slope = r_ltv_slope, reg_ltv_intercept = r_ltv_int, reg_ltv_r2 = r_ltv_r2, reg_ltv_corr = r_ltv_corr,
@@ -471,8 +584,18 @@ if (nrow(trust_stats) > 0) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   ggsave(file.path(trend_dir, "trend_rate.png"), p_trend_rate, width = 12, height = 6, bg = "white")
   cat("  Saved Rate trend plot.\n")
-  
-  # 3b. Term Trend
+
+  # 3b. Spread Trend
+  p_trend_spread <- ggplot(trust_stats, aes(x = trust_label, y = avg_spread, group = 1)) +
+    geom_line(color = "steelblue", size = 1) +
+    geom_point(size = 3, color = "steelblue") +
+    geom_label(aes(label = paste0(round(avg_spread, 2), "%")), fill = "white", label.size = NA, vjust = -0.5, size = 3) +
+    labs(title = "Average Spread (APR - Fed Funds Rate) by Trust Vintage", x = "Trust", y = "Average Spread (%)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggsave(file.path(trend_dir, "trend_spread.png"), p_trend_spread, width = 12, height = 6, bg = "white")
+  cat("  Saved Spread trend plot.\n")
+
+  # 3c. Term Trend
   p_trend_term <- ggplot(trust_stats, aes(x = trust_label, y = avg_term, group = 1)) +
     geom_line(color = "orange", size = 1) +
     geom_point(size = 3, color = "orange") +
@@ -566,6 +689,77 @@ if (nrow(trust_stats) > 0) {
     )
   ggsave(file.path(trend_dir, "trend_r2_vs_underwater.png"), p_dual, width = 12, height = 6, bg = "white")
   cat("  Saved R^2 vs Underwater dual-axis trend plot.\n")
+
+  # 8. Combined Spread vs FICO Scatter Plot (all vintages)
+  if (nrow(spread_all) > 0) {
+    # Add vintage labels to spread data
+    spread_all <- spread_all %>%
+      inner_join(trust_label_map, by = "trust_name")
+
+    # Ensure factor order matches trust_stats
+    spread_all$trust_label <- factor(spread_all$trust_label, levels = levels(trust_stats$trust_label))
+
+    # Filter to valid FICO scores
+    spread_fico_all <- spread_all %>%
+      filter(!is.na(obligorCreditScore) & obligorCreditScore > 300)
+
+    if (nrow(spread_fico_all) > 0) {
+      # Combined scatter plot: Spread vs FICO, colored by vintage
+      p_spread_fico_combined <- ggplot(spread_fico_all, aes(x = obligorCreditScore, y = spread, color = trust_label)) +
+        geom_point(alpha = 0.1, size = 0.5) +
+        geom_smooth(method = "lm", se = FALSE, linewidth = 1) +
+        labs(
+          title = "Spread vs FICO Score by Trust Vintage",
+          subtitle = "Spread = APR - Federal Funds Rate | Lines show linear trend per vintage",
+          x = "FICO Score",
+          y = "Spread (%)",
+          color = "Vintage"
+        ) +
+        theme(
+          plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+          legend.position = "right"
+        ) +
+        guides(color = guide_legend(override.aes = list(alpha = 1, size = 2)))
+      ggsave(file.path(trend_dir, "spread_vs_fico_by_vintage.png"), p_spread_fico_combined, width = 14, height = 8, bg = "white")
+      cat("  Saved Combined Spread vs FICO scatter plot.\n")
+
+      # Faceted version for clearer view of each vintage
+      p_spread_fico_facet <- ggplot(spread_fico_all, aes(x = obligorCreditScore, y = spread)) +
+        geom_point(alpha = 0.1, color = "steelblue", size = 0.5) +
+        geom_smooth(method = "lm", color = "red", se = TRUE, linewidth = 1) +
+        facet_wrap(~ trust_label, scales = "free_y", ncol = 4) +
+        labs(
+          title = "Spread vs FICO Score by Trust Vintage",
+          subtitle = "Spread = APR - Federal Funds Rate",
+          x = "FICO Score",
+          y = "Spread (%)"
+        ) +
+        theme(
+          plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+          strip.text = element_text(size = 10, face = "bold")
+        )
+      ggsave(file.path(trend_dir, "spread_vs_fico_faceted.png"), p_spread_fico_facet, width = 16, height = 12, bg = "white")
+      cat("  Saved Faceted Spread vs FICO plot.\n")
+    }
+
+    # Also keep the spread distribution by vintage plots
+    p_spread_combined <- ggplot(spread_all, aes(x = trust_label, y = spread)) +
+      geom_jitter(width = 0.2, alpha = 0.15, color = "steelblue", size = 0.5) +
+      geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.5, fill = "lightblue") +
+      stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red") +
+      labs(
+        title = "Spread Distribution by Trust Vintage",
+        subtitle = "Spread = APR - Federal Funds Rate | Red diamond = mean",
+        x = "Trust Vintage",
+        y = "Spread (%)"
+      ) +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+      )
+    ggsave(file.path(trend_dir, "spread_by_vintage.png"), p_spread_combined, width = 14, height = 8, bg = "white")
+    cat("  Saved Combined Spread distribution plot.\n")
+  }
 }
 
 dbDisconnect(conn)
