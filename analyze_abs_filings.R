@@ -13,6 +13,7 @@ rate_dir <- "plots/rate_distros"
 term_dir <- "plots/term_distros"
 trend_dir <- "plots/trends"
 spread_dir <- "plots/spread_distros"
+fico_dir <- "plots/fico_distros"
 
 if (!dir.exists(ltv_dir)) dir.create(ltv_dir, recursive = TRUE)
 if (!dir.exists(pti_dir)) dir.create(pti_dir, recursive = TRUE)
@@ -20,6 +21,7 @@ if (!dir.exists(rate_dir)) dir.create(rate_dir, recursive = TRUE)
 if (!dir.exists(term_dir)) dir.create(term_dir, recursive = TRUE)
 if (!dir.exists(trend_dir)) dir.create(trend_dir, recursive = TRUE)
 if (!dir.exists(spread_dir)) dir.create(spread_dir, recursive = TRUE)
+if (!dir.exists(fico_dir)) dir.create(fico_dir, recursive = TRUE)
 
 # Load federal funds rate data
 ffr_file <- "fed_funds_rate.csv"
@@ -63,6 +65,7 @@ trust_stats <- data.frame(
   avg_rate = numeric(),
   avg_spread = numeric(),
   avg_term = numeric(),
+  avg_fico = numeric(),
   # Regression Stats: Credit vs PTI
   reg_pti_slope = numeric(),
   reg_pti_intercept = numeric(),
@@ -105,6 +108,7 @@ for (trust in trusts) {
   curr_rate <- NA
   curr_spread <- NA
   curr_term <- NA
+  curr_fico <- NA
   
   # Regression & Danger Zone placeholders
   r_pti_slope <- NA; r_pti_int <- NA; r_pti_r2 <- NA; r_pti_corr <- NA
@@ -356,7 +360,35 @@ for (trust in trusts) {
       cat("  Saved Term plot:", filename, "\n")
     }
   }
-  
+
+  # --- FICO Score Analysis ---
+  if ("obligorCreditScore" %in% names(data)) {
+    fico_plot_data <- data %>%
+      filter(!is.na(obligorCreditScore) & obligorCreditScore > 300)
+
+    if (nrow(fico_plot_data) > 0) {
+      curr_fico <- mean(fico_plot_data$obligorCreditScore, na.rm = TRUE)
+
+      p_fico <- ggplot(fico_plot_data, aes(x = obligorCreditScore)) +
+        geom_histogram(bins = 50, fill = "darkblue", color = "black", alpha = 0.7) +
+        geom_vline(xintercept = curr_fico, color = "red", linetype = "dashed", linewidth = 1) +
+        labs(
+          title = paste("FICO Score Distribution:", trust),
+          subtitle = paste0("Mean: ", round(curr_fico, 0), " | n=", nrow(fico_plot_data)),
+          x = "FICO Score",
+          y = "Frequency"
+        ) +
+        theme(
+          plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+          axis.title = element_text(size = 12)
+        )
+
+      filename <- file.path(fico_dir, paste0(safe_name, "_fico.png"))
+      ggsave(filename, p_fico, width = 10, height = 6, bg = "white")
+      cat("  Saved FICO plot:", filename, "\n")
+    }
+  }
+
   # --- Verification Analysis ---
   if ("obligorIncomeVerificationLevelCode" %in% names(data)) {
     inc_counts <- data %>%
@@ -441,6 +473,7 @@ for (trust in trusts) {
     avg_rate = curr_rate,
     avg_spread = curr_spread,
     avg_term = curr_term,
+    avg_fico = curr_fico,
     reg_pti_slope = r_pti_slope, reg_pti_intercept = r_pti_int, reg_pti_r2 = r_pti_r2, reg_pti_corr = r_pti_corr,
     reg_ltv_slope = r_ltv_slope, reg_ltv_intercept = r_ltv_int, reg_ltv_r2 = r_ltv_r2, reg_ltv_corr = r_ltv_corr,
     reg_rate_slope = r_rate_slope, reg_rate_intercept = r_rate_int, reg_rate_r2 = r_rate_r2, reg_rate_corr = r_rate_corr,
@@ -604,7 +637,17 @@ if (nrow(trust_stats) > 0) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   ggsave(file.path(trend_dir, "trend_term.png"), p_trend_term, width = 12, height = 6, bg = "white")
   cat("  Saved Term trend plot.\n")
-  
+
+  # 3d. FICO Score Trend
+  p_trend_fico <- ggplot(trust_stats, aes(x = trust_label, y = avg_fico, group = 1)) +
+    geom_line(color = "darkblue", linewidth = 1) +
+    geom_point(size = 3, color = "darkblue") +
+    geom_label(aes(label = round(avg_fico, 0)), fill = "white", label.size = NA, vjust = -0.5, size = 3) +
+    labs(title = "Average FICO Score Trend by Trust Vintage", x = "Trust", y = "Average FICO Score") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggsave(file.path(trend_dir, "trend_fico.png"), p_trend_fico, width = 12, height = 6, bg = "white")
+  cat("  Saved FICO trend plot.\n")
+
   # 4. Danger Zone: Prime & High PTI
   p_trend_prime_pti <- ggplot(trust_stats, aes(x = trust_label, y = pct_prime_high_pti, group = 1)) +
     geom_line(color = "orange", size = 1) +
