@@ -81,6 +81,11 @@ trust_stats <- data.frame(
   reg_rate_intercept = numeric(),
   reg_rate_r2 = numeric(),
   reg_rate_corr = numeric(),
+  # Regression Stats: Credit vs Spread
+  reg_spread_slope = numeric(),
+  reg_spread_intercept = numeric(),
+  reg_spread_r2 = numeric(),
+  reg_spread_corr = numeric(),
   # Danger Zones
   pct_prime_high_pti = numeric(),
   pct_prime_high_rate = numeric(),
@@ -114,7 +119,8 @@ for (trust in trusts) {
   r_pti_slope <- NA; r_pti_int <- NA; r_pti_r2 <- NA; r_pti_corr <- NA
   r_ltv_slope <- NA; r_ltv_int <- NA; r_ltv_r2 <- NA; r_ltv_corr <- NA
   r_rate_slope <- NA; r_rate_int <- NA; r_rate_r2 <- NA; r_rate_corr <- NA
-  
+  r_spread_slope <- NA; r_spread_int <- NA; r_spread_r2 <- NA; r_spread_corr <- NA
+
   curr_prime_high_pti <- NA
   curr_prime_high_rate <- NA
   
@@ -278,10 +284,19 @@ for (trust in trusts) {
           filter(!is.na(obligorCreditScore) & obligorCreditScore > 300)
 
         if (nrow(spread_fico_data) > 0) {
-          # Calculate correlation
+          # Calculate correlation and regression R^2 (like we do for APR)
           fico_spread_corr <- cor(spread_fico_data$obligorCreditScore,
                                    spread_fico_data$spread,
                                    use = "complete.obs")
+
+          # Regression: Spread ~ FICO (for trend tracking)
+          if (nrow(spread_fico_data) > 10) {
+            m_spread <- lm(spread ~ obligorCreditScore, data = spread_fico_data)
+            r_spread_slope <- coef(m_spread)[2]
+            r_spread_int <- coef(m_spread)[1]
+            r_spread_r2 <- summary(m_spread)$r.squared
+            r_spread_corr <- fico_spread_corr
+          }
 
           p_spread_fico <- ggplot(spread_fico_data, aes(x = obligorCreditScore, y = spread)) +
             geom_point(alpha = 0.15, color = "steelblue", size = 1) +
@@ -477,6 +492,7 @@ for (trust in trusts) {
     reg_pti_slope = r_pti_slope, reg_pti_intercept = r_pti_int, reg_pti_r2 = r_pti_r2, reg_pti_corr = r_pti_corr,
     reg_ltv_slope = r_ltv_slope, reg_ltv_intercept = r_ltv_int, reg_ltv_r2 = r_ltv_r2, reg_ltv_corr = r_ltv_corr,
     reg_rate_slope = r_rate_slope, reg_rate_intercept = r_rate_int, reg_rate_r2 = r_rate_r2, reg_rate_corr = r_rate_corr,
+    reg_spread_slope = r_spread_slope, reg_spread_intercept = r_spread_int, reg_spread_r2 = r_spread_r2, reg_spread_corr = r_spread_corr,
     pct_prime_high_pti = curr_prime_high_pti,
     pct_prime_high_rate = curr_prime_high_rate
   ))
@@ -732,6 +748,26 @@ if (nrow(trust_stats) > 0) {
     )
   ggsave(file.path(trend_dir, "trend_r2_vs_underwater.png"), p_dual, width = 12, height = 6, bg = "white")
   cat("  Saved R^2 vs Underwater dual-axis trend plot.\n")
+
+  # 7b. R^2 Trend: FICO vs Rate AND FICO vs Spread
+  p_r2_comparison <- ggplot(trust_stats, aes(x = trust_label, group = 1)) +
+    geom_line(aes(y = reg_rate_r2, color = "R^2 (FICO vs APR)"), size = 1) +
+    geom_point(aes(y = reg_rate_r2, color = "R^2 (FICO vs APR)"), size = 3) +
+    geom_line(aes(y = reg_spread_r2, color = "R^2 (FICO vs Spread)"), size = 1, linetype = "dashed") +
+    geom_point(aes(y = reg_spread_r2, color = "R^2 (FICO vs Spread)"), size = 3) +
+    scale_y_continuous(name = "R^2 (Coefficient of Determination)", limits = c(0, 1)) +
+    scale_color_manual(name = "Metric", values = c("R^2 (FICO vs APR)" = "blue", "R^2 (FICO vs Spread)" = "darkgreen")) +
+    labs(
+      title = "Trend: Pricing Correlation (R^2) - APR vs Spread",
+      subtitle = "How well does FICO score explain APR and Spread over Fed Funds Rate?",
+      x = "Trust"
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom"
+    )
+  ggsave(file.path(trend_dir, "trend_r2_rate_vs_spread.png"), p_r2_comparison, width = 12, height = 6, bg = "white")
+  cat("  Saved R^2 (FICO vs APR) vs (FICO vs Spread) trend plot.\n")
 
   # 8. Combined Spread vs FICO Scatter Plot (all vintages)
   if (nrow(spread_all) > 0) {

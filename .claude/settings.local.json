@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Rscript:*)"
+      "Bash(Rscript:*)",
+      "Bash(sqlite3:*)"
     ]
   }
 }
